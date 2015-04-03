@@ -1,0 +1,152 @@
+%\VignetteIndexEntry{Introduction to MethTargetedNGS}
+\documentclass{article}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\date{}
+
+\title{Methylation Analysis of Next Generation Sequencing\\}
+\author{
+Muhammad Ahmer Jamil \textsuperscript{*,\textdagger}
+\\
+Prof. Holger Frohlich\footnote{Bonn-Aachen International Center for Information Technology}\\
+Priv.-Doz. Dr. Osman El-Maarri\footnote{Institute of Experimental Haematology and Transfusion Medicine, University of Bonn}\\
+}
+
+\maketitle
+\pagebreak
+\tableofcontents
+
+
+\section{Methylation Analysis}
+
+\subsection{Sequence Alignment}
+
+Sequences can be aligned to the reference sequence using Local, Global, Global-local and overlap algorithm. Default method used is Smith-Waterman Alogirthm (Local-Alignment). Sequence files were loaded first in the R before alignment. Following files are available in package.
+
+\begin{itemize}
+  \item  Healthy.fasta (Healthy patient sample)
+  \item Tumor.fasta (Tumor patient sample)
+  \item Reference.fasta (reference sequence from ncbi of the given patient sample)
+\end{itemize}
+
+<<Loading files in R>>= 
+library(MethTargetedNGS)
+healthy = system.file("extdata", "Healthy.fasta", package = "MethTargetedNGS")
+tumor = system.file("extdata", "Tumor.fasta", package = "MethTargetedNGS")
+reference = system.file("extdata", "Reference.fasta", package = "MethTargetedNGS")
+@
+
+After loading the sequences in R, we can perform sequence alignment using function methAlign.
+
+<<Aligning samples to reference sequence>>= 
+hAlign = methAlign(healthy,reference)
+tAlign = methAlign(tumor,reference)
+@
+
+Time difference is the time used for the processing of the methAlign function. This time depends on the number of sequences in the fasta file. This function gives maxtrix contains methylation profile of the given fasta file. Rows correspond to the sequences present in the sample and column represent numbers of CpG sites in the reference sequence.
+
+To view the methylation pattern in the samples, we can use methHeatmap for generating heatmap for the given methylation data.
+
+<<:Heatmap>>=
+hHeatmap = methHeatmap(hAlign,plot=TRUE)
+@
+\begin{figure}
+<<fig=TRUE,echo=FALSE,print=FALSE,figs.only=FALSE>>=
+hHeatmap = methHeatmap(hAlign,plot=TRUE)
+@
+\caption{Heatmap}
+\end{figure}
+
+
+\subsection{Methylation Average}
+
+Methylation average of a CpG site is the percentage of unmethylated cytosine or methylated cytosine in a particular CpG site. Determining methylation average is the most traditional way of analyzing the DNA methylation level.[1] Methylation average explains the hypomethylation and hypermethylation in the sample. Hypomethylation or hypermethylation caused in tumor cells can have change in the average methylation at particular CpG site. This measure of variability in combination of healthy and tumor can be used to explain the methylation level difference between healthy and tumor samples.
+The methylation average of a particular CpG site was calculated by number of cytosine divided by sum of total number of methylated and unmethylated cytosine at particular CpG site in a group of reads. To calculate methylation average it was assumed that all sequences align perfectly with no mismatch or insertion/deletion, although it is an ideal case. 
+
+\begin{equation} \label{eq:Methylation Average}
+   average = N_C/(N_C + N_T)
+\end{equation}
+
+In MethTargetedNGS, methylation average can be calculated by passing the matrix obtained from methAlign to methAvg. It will return a vector of methylation averages in percentages.A plot of methylation average will be generated if plot=TRUE. 
+<<Calculating Methylation Average>>= 
+hAvg = methAvg(hAlign,plot=FALSE)
+hAvg
+@
+\subsection{Methylation Entropy}
+Determination of average methylation is the traditional way of analyzing DNA methylation data. Such way is unable to dissect DNA methylation pattern. DNA methylation pattern is defined as the combination of methylation statuses of contiguous CpG dinucleotides in a DNA strand.
+Methylation entropy can be caluclated by using the formula from Xie et. al.[2] which was "implies" to the function methAlign
+<<Calculating methylation entropy>>=
+hEnt <- methEntropy(hAlign)
+hEnt
+@
+This function return vector of methylation entropy values using sliding window of 4.
+
+\subsection{Identify significant CpG sites}
+Fisher exact test is a test to calculate the statistical significance using contingency table. It was used to find the statistically significant differences in the methylation status of one particular CpG site between healthy and tumor sample. Contingency matrix was created for each CpG site in the following pattern. Fisher exact test was performed using a predefined function
+"fisher.exact" in R. P-value was corrected for multiple testing using Benjamini-Hochberg method
+to calculate False Discovery Rate (FDR).[3]
+To calculate the statistically significant CpG sites, pass the healthy and tumor aligned matrix from methAlign to fishertest\_cpg.
+<<Calculate statistically significant CpG sites in samples>>= 
+SigCpGsites = fishertest_cpg(hAlign,tAlign,plot=FALSE)
+SigCpGsites
+@
+\subsubsection{Log odd ratio}
+Log odd ratio defines the hypomethylation and hypermethylation of a sample comparison to other sample. To calculate odd ratio we can pass healthy and tumor aligned matrix from methAlign to odd\_ratio
+
+<<Odd Ratio>>=
+odSamps = odd_ratio(hAlign,tAlign,plot=FALSE)
+odSamps
+@
+\begin{figure}[h!]
+<<fig=TRUE,echo=FALSE>>=
+compare_samples(hAlign,tAlign)
+@
+\caption{Methylation Analysis between Healthy and Tumor}
+\end{figure}
+\subsection {Complete Pipeline}
+Methylation average, methylation entropy and identifying statistically signficant CpG sites can be calculated by using compare\_samples function by passing the aligned matrices of healthy and tumor samples from methAlign function. Complete methylation analysis shown in figure 2.
+
+<<Complete Methylation Analysis Comparison>>=
+compare_samples(hAlign,tAlign)
+@
+
+
+\section{Profile Hidden Markov Model}
+Profile Hidden Markov Model is a method of transforming multiple sequence alignment into a position specific scoring system. It gives the probabilistic model for multiple sequence alignment. Profile HMM allows to compute a likelihood, which can define the similarities between a new sequence and the model.
+
+To create a Profile HMM hmmer software is required;
+<<Creating Profile Hidden Markov Model from Multiple Sequence Alignment>>=
+msa = system.file("extdata", "msa.fasta", package = "MethTargetedNGS")
+if (file.exists("/usr/bin/hmmbuild"))
+hmmbuild(file_seq=msa,file_out="hmm",pathHMMER = "/usr/bin/")
+@
+
+To calculate the likelihood of pool of sequences with HMM model;
+<<Calculate likelihood of sequences against HMM>>=
+if (file.exists("/usr/bin/nhmmer")){
+res <- nhmmer("hmm",tumor,pathHMMER = "/usr/bin/")
+res$Total.Likelihood.Score
+}
+@
+
+\begin{thebibliography}{}
+\bibitem[1]{[1]}
+Singer, H., Walier, M., Nusgen, N., Meesters, C., Schreiner, F., Woelfle, J., Fimmers, R.,Wienker, T., Kalscheuer, V.M., Becker, T. et al. (2012)
+\newblock \emph{Methylation of L1Hs promoters is lower on the inactive X, has a tendency of being higher on autosomes in smaller genomes and shows inter-individual variability at some loci.}.
+\newblock Hum Mol Genet, 21, 219-235
+
+\bibitem[2]{[2]}
+Xie, H., Wang, M., de Andrade, A., Bonaldo, M.d.F., Galat, V., Arndt, K., Rajaram, V.,
+Goldman, S., Tomita, T. and Soares, M.B. (2011)
+\newblock \emph{Genome-wide quantitative assessment of
+variation in DNA methylation patterns}.
+\newblock Nucleic Acids Research, 39, 4099-4108.
+
+\bibitem[3]{[3]}
+Benjamini, Yoav; Hochberg, Yosef (1995).
+\newblock \emph{Controlling the false discovery rate: a practical
+and powerful approach to multiple testing}.
+\newblock Journal of the Royal Statistical Society, Series B 57 (1): 289 - 300.MR 1325392.
+
+\end{thebibliography}
+\end{document}

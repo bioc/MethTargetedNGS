@@ -1,0 +1,15 @@
+Package: MethTargetedNGS
+Type: Package
+Title: Perform Methylation Analysis on Next Generation Sequencing Data
+Version: 0.99.8
+Date: 2015-02-06
+Depends: R (>= 3.1.2), stringr, seqinr, gplots, Biostrings
+SystemRequirements: HMMER3
+Author: Muhammad Ahmer Jamil with Contribution of Prof. Holger Frohlich
+        and Priv.-Doz. Dr. Osman El-Maarri
+Maintainer: Muhammad Ahmer Jamil <engr.ahmerjamil@gmail.com>
+Description: Perform step by step methylation analysis of Next
+        Generation Sequencing data.
+License: Artistic-2.0
+biocViews: ResearchField, Genetics, Sequencing, Alignment,
+        SequenceMatching, DataImport

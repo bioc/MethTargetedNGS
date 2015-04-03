@@ -1,0 +1,6 @@
+importFrom(seqinr, read.fasta, write.fasta)
+importFrom(stringr, str_locate_all)
+importFrom(Biostrings, nucleotideSubstitutionMatrix, pairwiseAlignment, DNAString, reverseComplement)
+importFrom(gplots,heatmap.2)
+
+exportPattern("^[[:alpha:]]+")
