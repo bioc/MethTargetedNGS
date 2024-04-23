@@ -1,7 +1,7 @@
 \name{methAlign}
 \alias{methAlign}
 \title{
- Align sequences with the reference sequence using pairwiseAlignment function from BioStrings
+ Align sequences with the reference sequence using pairwiseAlignment function from the pwalign package
 }
 \description{
 This function allow users to align pool of sequences to the reference sequence.

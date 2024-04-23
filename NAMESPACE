@@ -1,6 +1,11 @@
+importFrom(utils, read.table)
+importFrom(graphics, abline, barplot, lines, par)
+importFrom(stats, fisher.test, p.adjust, setNames)
+
 importFrom(seqinr, read.fasta, write.fasta)
 importFrom(stringr, str_locate_all)
-importFrom(Biostrings, nucleotideSubstitutionMatrix, pairwiseAlignment, DNAString, reverseComplement)
+importFrom(Biostrings, DNAString, reverseComplement)
+importFrom(pwalign, nucleotideSubstitutionMatrix, pairwiseAlignment)
 importFrom(gplots,heatmap.2)
 
 exportPattern("^[[:alpha:]]+")
