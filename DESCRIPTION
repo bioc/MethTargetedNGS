@@ -1,7 +1,7 @@
 Package: MethTargetedNGS
 Type: Package
 Title: Perform Methylation Analysis on Next Generation Sequencing Data
-Version: 1.35.1
+Version: 1.36.0
 Date: 2024-04-23
 Depends: R (>= 3.1.2), stringr, seqinr, gplots, Biostrings, pwalign
 Imports: utils, graphics, stats
